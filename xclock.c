@@ -289,9 +289,7 @@ static void SetSeg(int, int, int, int);
 static void *TempoTrackerThread();
 #endif
 
-int main(argc, argv)
-    int         argc;
-    char        *argv[];
+int main(int argc, char *argv[])
 {
     int         n;
     Arg         args[10];
@@ -894,9 +892,7 @@ static void *TempoTrackerThread() {
 }
 #endif
 
-static void ParseGeometry(topLevel, stringWidth, stringAscent, stringDescent)
-    Widget      topLevel;
-    int         stringWidth, stringAscent, stringDescent;
+static void ParseGeometry(Widget topLevel, int stringWidth, int stringAscent, int stringDescent)
 {
     int         n;
     Arg         args[10];
@@ -1260,10 +1256,7 @@ static void ParseGeometry(topLevel, stringWidth, stringAscent, stringDescent)
  *  to the perimeter, then erasing all but the outside most pixels doesn't
  *  work because of round-off error (sigh).
  */
-static void DrawLine(blankLength, length, fractionOfACircle)
-    int         blankLength;
-    int         length;
-    double      fractionOfACircle;
+static void DrawLine(int blankLength, int length, double fractionOfACircle)
 {
     double      angle, cosAngle, sinAngle;
 
@@ -1295,9 +1288,7 @@ static void DrawLine(blankLength, length, fractionOfACircle)
  *  how far around the circle (clockwise) from high noon.
  *
  */
-static void DrawHand(length, width, fractionOfACircle)
-    int         length, width;
-    double      fractionOfACircle;
+static void DrawHand(int length, int width, double fractionOfACircle)
 {
     double      angle, cosAngle, sinAngle;
     double      ws, wc;
@@ -1349,9 +1340,7 @@ static void DrawHand(length, width, fractionOfACircle)
  *  how far around the circle (clockwise) from high noon.
  *
  */
-static void DrawSecond(length, width, offset, fractionOfACircle)
-    int         length, width, offset;
-    double      fractionOfACircle;
+static void DrawSecond(int length, int width, int offset, double fractionOfACircle)
 {
     double      angle, cosAngle, sinAngle;
     double      ms, mc, ws, wc;
@@ -1415,8 +1404,7 @@ static void DrawSecond(length, width, offset, fractionOfACircle)
     numSegs++;
 }
 
-static void SetSeg(x1, y1, x2, y2)
-    int x1, y1, x2, y2;
+static void SetSeg(int x1, int y1, int x2, int y2)
 {
     segBufPtr->x   = x1;
     segBufPtr++->y = y1;
@@ -1430,9 +1418,7 @@ static void SetSeg(x1, y1, x2, y2)
  *  Draw the clock face (every fifth tick-mark is longer
  *  than the others).
  */
-static void DrawClockFace(secondHand, radius)
-    int         secondHand;
-    int         radius;
+static void DrawClockFace(int secondHand, int radius)
 {
     int         i;
     int         delta = (radius - secondHand) / 3;
@@ -1476,14 +1462,12 @@ static void DrawClockFace(secondHand, radius)
     DrawBell(False);
 }
 
-static int Round(x)
-    double x;
+static int Round(double x)
 {
     return (x >= 0.0 ? (int)(x + 0.5) : (int)(x - 0.5));
 }
 
-static void DigitalString(str)
-    char *str;
+static void DigitalString(char *str)
 {
     char *cp;
     
@@ -1504,8 +1488,7 @@ static void DigitalString(str)
 /*
  * Report the syntax for calling xclock.
  */
-static void Syntax(call)
-    char *call;
+static void Syntax(char *call)
 {
     printf("Usage: %s [toolkitoptions]\n", call);
     printf("       [-mode <analog, digital, cat>]\n");
@@ -1524,8 +1507,7 @@ static void Syntax(call)
 }
 
 
-static void InitializeCat(catColor, detailColor, tieColor)
-    Pixel    catColor, detailColor, tieColor;
+static void InitializeCat(Pixel catColor, Pixel detailColor, Pixel tieColor)
 {
     Pixmap           catPix;
     Pixmap           catBack;
@@ -1623,7 +1605,7 @@ static void InitializeCat(catColor, detailColor, tieColor)
     }
 }
 
-static void UpdateEyesAndTail()
+static void UpdateEyesAndTail(void)
 {
     static int  curTail = 0;    /*  Index into tail pixmap array       */
     static int  tailDir = 1;    /*  Left or right swing                */
@@ -1679,7 +1661,7 @@ static void UpdateEyesAndTail()
 }
 
 
-static GC CreateTailGC()
+static GC CreateTailGC(void)
 {
     GC                 tailGC;
     XGCValues          tailGCV;
@@ -1712,7 +1694,7 @@ static GC CreateTailGC()
 }
 
 
-static GC CreateEyeGC()
+static GC CreateEyeGC(void)
 {
     GC                 eyeGC;
     XGCValues          eyeGCV;
@@ -1745,8 +1727,7 @@ static GC CreateEyeGC()
 }
 
 
-static Pixmap CreateTailPixmap(t)
-    double      t;                      /*  "Time" parameter  */
+static Pixmap CreateTailPixmap(double t)
 {
     Pixmap      tailBitmap;
     GC          bitmapGC;
@@ -1852,8 +1833,7 @@ static Pixmap CreateTailPixmap(t)
 }
 
 
-static Pixmap CreateEyePixmap(t)
-    double      t;                     /*  "Time" parameter  */
+static Pixmap CreateEyePixmap(double t)
 {
     Pixmap      eyeBitmap;
     GC          bitmapGC;
@@ -1954,9 +1934,7 @@ static Pixmap CreateEyePixmap(t)
 }
 
 
-static Widget CreateToggle(label, parent)
-    char   *label;
-    Widget  parent;
+static Widget CreateToggle(char *label, Widget parent)
 {
     Widget      w;
     int         n;
@@ -1975,9 +1953,7 @@ static Widget CreateToggle(label, parent)
     return (w);
 }
 
-static Widget CreatePushButton(label, parent)
-    char   *label;
-    Widget  parent;
+static Widget CreatePushButton(char *label, Widget parent)
 {
     Widget   w;
     int      n;
@@ -1997,10 +1973,7 @@ static Widget CreatePushButton(label, parent)
 }
 
 
-static void HandleExpose(w, clientData, _callData)
-    Widget    w;
-    XtPointer clientData;
-    XtPointer _callData;
+static void HandleExpose(Widget w, XtPointer clientData, XtPointer _callData)
 {
     XmDrawingAreaCallbackStruct *callData =
         (XmDrawingAreaCallbackStruct *)_callData;
@@ -2043,9 +2016,7 @@ static void HandleExpose(w, clientData, _callData)
 }
 
 
-static void Tick(w, add)
-    Widget      w;
-    int         add;
+static void Tick(Widget w, int add)
 {
     static Bool        beeped = False;  /*  Beeped already?        */
     time_t             timeValue;       /*  What time is it?       */
@@ -2078,15 +2049,15 @@ static void Tick(w, add)
                     t2 = (tm.tm_sec / appData.update) * appData.update;
                     t1 += t2;
                     XtAppAddTimeOut(appContext, t1 * 1000,
-                                    Tick, w);
+                                    (XtTimerCallbackProc)Tick, (XtPointer)w);
                 } else {
                     XtAppAddTimeOut(appContext, appData.update * 1000,
-                                    Tick, w);
+                                    (XtTimerCallbackProc)Tick, (XtPointer)w);
                 }
                 break;
             }
             case CAT_CLOCK : {
-                XtAppAddTimeOut(appContext, appData.update, Tick, w);
+                XtAppAddTimeOut(appContext, appData.update, (XtTimerCallbackProc)Tick, (XtPointer)w);
                 break;
             }
         }
@@ -2228,10 +2199,7 @@ static void Tick(w, add)
 }
 
 
-static void HandleInput(w, clientData, _callData)
-    Widget     w;
-    XtPointer  clientData;
-    XtPointer  _callData;
+static void HandleInput(Widget w, XtPointer clientData, XtPointer _callData)
 {
     XmDrawingAreaCallbackStruct *callData =
         (XmDrawingAreaCallbackStruct *)_callData;
@@ -2313,10 +2281,7 @@ static void HandleInput(w, clientData, _callData)
 }
 
 
-static void AlarmSetCallback(w, clientData, callData)
-    Widget     w;
-    XtPointer  clientData;
-    XtPointer  callData;
+static void AlarmSetCallback(Widget w, XtPointer clientData, XtPointer callData)
 {
     if ((appData.alarmSet = appData.alarmSet ? False : True)) {
         SetAlarm(appData.alarmFile);
@@ -2330,29 +2295,20 @@ static void AlarmSetCallback(w, clientData, callData)
 }
 
 
-static void AlarmBellCallback(w, clientData, callData)
-     Widget     w;
-     XtPointer  clientData;
-     XtPointer  callData;
+static void AlarmBellCallback(Widget w, XtPointer clientData, XtPointer callData)
 {
     SetBell((appData.alarmBell = appData.alarmBell ? False : True) ?
             appData.alarmBellPeriod : 0);
 }
 
 
-static void ChimeCallback(w, clientData, callData)
-    Widget     w;
-    XtPointer  clientData;
-    XtPointer  callData;
+static void ChimeCallback(Widget w, XtPointer clientData, XtPointer callData)
 {
     appData.chime = appData.chime ? False : True;
 }
 
 
-static void AckAlarmCallback(w, clientData, callData)
-    Widget     w;
-    XtPointer  clientData;
-    XtPointer  callData;
+static void AckAlarmCallback(Widget w, XtPointer clientData, XtPointer callData)
 {
     if (alarmOn) {
         AlarmOff();
@@ -2362,10 +2318,7 @@ static void AckAlarmCallback(w, clientData, callData)
 }
 
 
-static void RereadAlarmCallback(w, clientData, callData)
-    Widget     w;
-    XtPointer  clientData;
-    XtPointer  callData;
+static void RereadAlarmCallback(Widget w, XtPointer clientData, XtPointer callData)
 {
     Widget     setW = (Widget)clientData;
 
@@ -2387,10 +2340,7 @@ static void RereadAlarmCallback(w, clientData, callData)
 }
 
 
-static void EditAlarmCallback(w, clientData, callData)
-    Widget     w;
-    XtPointer  clientData;
-    XtPointer  callData;
+static void EditAlarmCallback(Widget w, XtPointer clientData, XtPointer callData)
 {
     Widget       setW = (Widget)clientData;
 
@@ -2429,19 +2379,13 @@ static void EditAlarmCallback(w, clientData, callData)
 }
 
 
-static void ExitCallback(w, clientData, callData)
-    Widget     w;
-    XtPointer  clientData;
-    XtPointer  callData;
+static void ExitCallback(Widget w, XtPointer clientData, XtPointer callData)
 {
     exit(0);
 }
 
 
-static void HandleResize(w, clientData, callData)
-    Widget     w;
-    XtPointer  clientData;
-    XtPointer  callData;
+static void HandleResize(Widget w, XtPointer clientData, XtPointer callData)
 {
     XWindowAttributes xwa;
     
@@ -2527,9 +2471,7 @@ static void HandleResize(w, clientData, callData)
 }
 
 
-static void EraseHands(w, tm)
-    Widget      w;
-    struct tm   *tm;
+static void EraseHands(Widget w, struct tm *tm)
 {
     if (numSegs > 0) {
         if (showSecondHand) {
@@ -2570,11 +2512,7 @@ static void EraseHands(w, tm)
 }
 
 
-static void MapCallback(w, clientData, event, continueToDispatch)
-    Widget      w;
-    XtPointer   clientData;
-    XEvent     *event;
-    Boolean    *continueToDispatch;
+static void MapCallback(Widget w, XtPointer clientData, XEvent *event, Boolean *continueToDispatch)
 {
     *continueToDispatch = True;
 

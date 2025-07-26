@@ -81,13 +81,7 @@ static void HideBell(void);
 static void TextScroll(int);
 static void Set_Alarm(void);
 
-void InitBellAlarm(win, width, height, fontInfo, fontList, fg, bg, state, on)
-    Window        win;
-    int           width, height;
-    XFontStruct  *fontInfo;
-    XmFontList    fontList;
-    Pixel         fg, bg;
-    Boolean      *state, *on;
+void InitBellAlarm(Window win, int width, int height, XFontStruct *fontInfo, XmFontList fontList, Pixel fg, Pixel bg, Boolean *state, Boolean *on)
 {
     xmFontList = fontList;
 
@@ -119,8 +113,7 @@ void InitBellAlarm(win, width, height, fontInfo, fontList, fg, bg, state, on)
     }
 }
 
-void DrawBell(flash)
-    int  flash;
+void DrawBell(int flash)
 {
     Boolean  i;
     
@@ -145,14 +138,14 @@ void DrawBell(flash)
     }
 }
 
-static void HideBell()
+static void HideBell(void)
 {
     XFillRectangle(dpy, w, eraseGC,
                    bellX, bellY, bell_width, bell_height);
     XFlush(dpy);
 }
 
-void AlarmAnnounce()
+void AlarmAnnounce(int val)
 {
     int               i, w;
     char              buf[BUFSIZ];
@@ -189,8 +182,7 @@ void AlarmAnnounce()
     }
 }
 
-static void TextScroll(val)
-    int  val;
+static void TextScroll(int val)
 {
     int       x, index;
     XmString  xmString;
@@ -225,8 +217,7 @@ static void TextScroll(val)
     XFlush(dpy);
 }
 
-static void ReadAlarmFile(file)
-    char  *file;
+static void ReadAlarmFile(char *file)
 {
     char       *cp, *tp, *dp;
     int         hour, minute, pm, day;
@@ -382,8 +373,7 @@ static void ReadAlarmFile(file)
     }
 }
 
-void SetAlarm(file)
-    char  *file;
+void SetAlarm(char *file)
 {
     ReadAlarmFile(file);
     
@@ -404,7 +394,7 @@ void SetAlarm(file)
     Set_Alarm();
 }
 
-static void ResetAlarm()
+static void ResetAlarm(int signal)
 {
     if (!*alarmFile) {
         return;
@@ -424,7 +414,7 @@ static void ResetAlarm()
     Set_Alarm();
 }
 
-static void Set_Alarm()
+static void Set_Alarm(void)
 {
     struct itimerval tv;
     
@@ -443,15 +433,13 @@ static void Set_Alarm()
     setitimer(ITIMER_REAL, &tv, (struct itimerval *)NULL);
 }
 
-void GetBellSize(bw, bh)
-    int *bw, *bh;
+void GetBellSize(int *bw, int *bh)
 {
     *bw = bell_width +  2 * PAD;
     *bh = bell_height + 2 * PAD;
 }
 
-void SetBell(seconds)
-    int seconds;
+void SetBell(int seconds)
 {
     alarmBell = seconds;
 }
