@@ -129,6 +129,7 @@ static int     digitalX, digitalY;
  */
 #define VERTICES_IN_HANDS    4             /*  Hands are triangles      */
 #define SECOND_HAND_FRACT    90            /*  Percentages of radius    */
+#define CAT_SECOND_HAND_FRACT 60
 #define MINUTE_HAND_FRACT    70    
 #define HOUR_HAND_FRACT      40
 #define HAND_WIDTH_FRACT     7
@@ -140,7 +141,7 @@ static int     centerX = 0;             /*  Window coord origin of      */
 static int     centerY = 0;             /*  clock hands.                */
 
 static int     radius;                  /*  Radius of clock face        */
-
+static int     secondLineSeg = 0;  	/*  Segment offset for the Seconds Line*/
 static int     secondHandLength;        /*  Current lengths and widths  */
 static int     minuteHandLength;
 static int     hourHandLength;
@@ -226,6 +227,7 @@ typedef struct {
     char                *alarmFile;             /*  Alarm setting file  */
     int                 alarmBellPeriod;        /*  How long to ring    */
                                                 /*  alarm               */
+    Boolean		drawSecondLine;		/*  draw Second Line?	*/
     Boolean             chime;                  /*  Chime on hour?      */
 
     int                 help;                   /*  Display syntax      */
@@ -249,7 +251,6 @@ static ApplicationData appData;
 static Boolean  noSeconds      = False;    /*  Update time >= 1 minute? */
 static Boolean  evenUpdate     = False;    /*  Even update interval?    */
 static Boolean  showSecondHand = False;    /*  Display second hand?     */
-
 static Boolean  iconified      = False;    /*  Clock iconified?         */
 
 
@@ -360,8 +361,12 @@ int main(int argc, char *argv[])
         { "period", "Period", XtRInt, sizeof(int),
           XtOffset(ApplicationDataPtr, alarmBellPeriod),
           XtRImmediate, (XtPointer)DEF_ALARM_PERIOD },
-    
-        { "chime", "Chime", XtRBoolean, sizeof(Boolean),
+
+	{ "drawSecondLine", "DrawSecondLine", XtRBoolean, sizeof(Boolean),
+	  XtOffset(ApplicationDataPtr, drawSecondLine),
+	  XtRImmediate, (XtPointer)False },
+
+	{ "chime", "Chime", XtRBoolean, sizeof(Boolean),
           XtOffset(ApplicationDataPtr, chime),
           XtRImmediate, (XtPointer)False },
 
@@ -553,18 +558,20 @@ int main(int argc, char *argv[])
             if (appData.nTails > 60) {
                 appData.nTails = 60;
             }
-        
+            /*
+             *  Drawing the second hand on the cat is ugly.
+             */
+            if (appData.update <= SECOND_HAND_TIME) {
+                showSecondHand = True;
+            }
+
+
             /*
              *  Update rate depends on number of tails,
              *  so tail swings at approximately 60 hz.
              */
             appData.update = (int)(0.5 + 1000.0 / appData.nTails);
         
-            /*
-             *  Drawing the second hand on the cat is ugly.
-             */
-            showSecondHand = False;
-
             break;
         }
         case DIGITAL_CLOCK : {
@@ -692,7 +699,10 @@ int main(int argc, char *argv[])
         
             centerX = winWidth  / 2;
             centerY = winHeight / 2;
-        
+	    if(appData.drawSecondLine){
+		secondLineSeg = 1;
+	    }
+
             break;
         }
         case CAT_CLOCK : {
@@ -702,7 +712,7 @@ int main(int argc, char *argv[])
             radius = Round((min(winWidth,
                                 winHeight)-(2 * appData.padding)) / 3.45);
         
-            secondHandLength =  ((SECOND_HAND_FRACT  * radius)  / 100);
+            secondHandLength =  ((CAT_SECOND_HAND_FRACT  * radius)  / 100);
             minuteHandLength =  ((MINUTE_HAND_FRACT  * radius)  / 100);
             hourHandLength   =  ((HOUR_HAND_FRACT    * radius)  / 100);
         
@@ -711,7 +721,10 @@ int main(int argc, char *argv[])
         
             centerX = winWidth  / 2;
             centerY = winHeight / 2;
-        
+            if(appData.drawSecondLine){
+		secondLineSeg = 1;
+	    }
+
             break;
         }
     }
@@ -1384,6 +1397,12 @@ static void DrawSecond(int length, int width, int offset, double fractionOfACirc
     ms = mid * sinAngle;
     wc = width * cosAngle;
     ws = width * sinAngle;
+    if(appData.drawSecondLine){
+	SetSeg(centerX,
+	       centerY,
+	       centerX + Round(length * sinAngle),
+	       centerY - Round(length * cosAngle));
+    }
     /*1 ---- 2 */
     SetSeg(x = centerX + Round(length * sinAngle),
            y = centerY - Round(length * cosAngle),
@@ -2099,18 +2118,17 @@ static void Tick(Widget w, int add)
         
             if (clockMode == ANALOG_CLOCK) {
                 EraseHands((Widget)NULL, &tm);
-            }
+            } else {
+                DrawClockFace(secondHandLength, radius);
+
+	    }
 
             if (numSegs == 0 ||    tm.tm_min != otm.tm_min ||
-                tm.tm_hour != otm.tm_hour) {
+                tm.tm_hour != otm.tm_hour || appData.drawSecondLine) {
         
                 segBufPtr = segBuf;
                 numSegs = 0;
-        
-                if (clockMode == CAT_CLOCK) {
-                    DrawClockFace(secondHandLength, radius);
-                }
-        
+
                 /*
                  *  Calculate the minute hand, fill it in with its
                  *  color and then outline it.  Next, do the same
@@ -2150,28 +2168,27 @@ static void Tick(Widget w, int add)
                            CoordModeOrigin);
             }
         
-            if (clockMode == ANALOG_CLOCK) {
-                if (showSecondHand) {
-                    numSegs = 2 * (VERTICES_IN_HANDS + 2);
-                    segBufPtr = &(segBuf[numSegs]);
+            if (showSecondHand) {
+                numSegs = 2 * (VERTICES_IN_HANDS + 2);
+                segBufPtr = &(segBuf[numSegs]);
 
-                    DrawSecond(secondHandLength - 2, secondHandWidth,
-                               minuteHandLength + 2,
-                               ((double)tm.tm_sec) / 60.0);
+                DrawSecond(secondHandLength - 2, secondHandWidth,
+                           minuteHandLength + 2,
+                           ((double)tm.tm_sec) / 60.0);
 
-                    if (appData.handColor != appData.background) {
-                        XFillPolygon(dpy, clockWindow, handGC,
-                                     &(segBuf[(VERTICES_IN_HANDS + 2) * 2]),
-                                     VERTICES_IN_HANDS * 2 - 1,
-                                     Convex, CoordModeOrigin);
-                    }
-            
-                    XDrawLines(dpy, clockWindow, highGC,
-                               &(segBuf[(VERTICES_IN_HANDS + 2) * 2]),
-                               VERTICES_IN_HANDS * 2 - 1,
-                               CoordModeOrigin);
+                if (appData.handColor != appData.background) {
+                    XFillPolygon(dpy, clockWindow, handGC,
+                                 &(segBuf[(VERTICES_IN_HANDS + 2 + secondLineSeg) * 2]),
+                                 VERTICES_IN_HANDS * 2 - 1,
+                                 Convex, CoordModeOrigin);
                 }
-            } else {
+            
+                XDrawLines(dpy, clockWindow, highGC,
+                               &(segBuf[(VERTICES_IN_HANDS + 2) * 2]),
+                               (VERTICES_IN_HANDS + secondLineSeg) * 2 - 1,
+                               CoordModeOrigin);
+            }
+            if(clockMode == CAT_CLOCK) {
                 UpdateEyesAndTail();
             }
         
@@ -2477,12 +2494,12 @@ static void EraseHands(Widget w, struct tm *tm)
         if (showSecondHand) {
             XDrawLines(dpy, clockWindow, eraseGC,
                        &(segBuf[2 * (VERTICES_IN_HANDS + 2)]),
-                       VERTICES_IN_HANDS * 2 - 1,
+                       (VERTICES_IN_HANDS + secondLineSeg) * 2 - 1,
                        CoordModeOrigin);
 
             if (appData.handColor != appData.background) {
                 XFillPolygon(dpy, clockWindow, eraseGC,
-                             &(segBuf[2 * (VERTICES_IN_HANDS + 2)]),
+                             &(segBuf[2 * (VERTICES_IN_HANDS + 2 + secondLineSeg)]),
                              VERTICES_IN_HANDS * 2 - 1,
                              Convex, CoordModeOrigin);
             }
