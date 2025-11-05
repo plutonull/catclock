@@ -1,12 +1,14 @@
+XCOMM Set if you have GNU_EMACS or XEMACS
+XCOMM DEFINES = -DHAS_GNU_EMACS
 
 SRCS = xclock.c alarm.c
 OBJS = xclock.o alarm.o
+#include "Motif.rules"
+#include "Motif.tmpl"
 
-     MOTIF = ${BUILDLINK_DIR}
-MOTIF_LIBS = ${MOTIFLIB} -lSM -lICE -lXt
-MOTIF_INCS = -I$(MOTIF)/include
+MOTIF_LIBS = XmClientLibs
+MOTIF_INCS = -I/usr/include/X11
   INCLUDES = -I. $(MOTIF_INCS) $(TOP_X_INCLUDES)
-   DEFINES = -DHAS_GNU_EMACS
 
 LOCAL_LIBRARIES = $(MOTIF_LIBS)
   SYS_LIBRARIES = -lX11 -lm
