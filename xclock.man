@@ -113,8 +113,20 @@ The default is \fIoff\fP.
 Specifies whether or not a bell should be rung on the hour and half hour.
 The default is \fIoff\fP.
 .TP 8
-.B hands (\fPclass\fB Foreground)
-Specifies the color of the insides of the clock's hands. The default 
+.B hourColor (\fPclass\fB Foreground)
+Specifies the color of the inside of the hour hand. The default 
+depends on whether
+\fIreverseVideo\fP is specified.  If \fIreverseVideo\fP is specified
+the default is \fIwhite\fP, otherwise the default is \fIblack\fP.
+.TP 8
+.B minuteColor (\fPclass\fB Foreground)
+Specifies the color of the inside of the minute hand. The default 
+depends on whether
+\fIreverseVideo\fP is specified.  If \fIreverseVideo\fP is specified
+the default is \fIwhite\fP, otherwise the default is \fIblack\fP.
+.TP 8
+.B secondColor (\fPclass\fB Foreground)
+Specifies the color of the inside and outside of the second hand. The default 
 depends on whether
 \fIreverseVideo\fP is specified.  If \fIreverseVideo\fP is specified
 the default is \fIwhite\fP, otherwise the default is \fIblack\fP.
@@ -145,6 +157,9 @@ the default is \fIblack\fP, otherwise the default is \fIwhite\fP.
 .TP 8
 .B update (\fPclass\fB Interval)
 Specifies the frequency in seconds at which the time should be redisplayed.
+.TP 8
+.B drawSecondLine (\fclass\fB Boolean)
+Specifies whether a line is to be drawn from the clock centre for the Second Hand
 .TP 8
 .B padding (\fPclass\fB Margin)
 Specifies the amount of internal padding in pixels to be used.  The default is

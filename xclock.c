@@ -16,6 +16,7 @@
  *    Philip J. Schneider, DEC
  *      1990
  */
+#include <X11/X.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -134,7 +135,7 @@ static int     digitalX, digitalY;
 #define HOUR_HAND_FRACT      40
 #define HAND_WIDTH_FRACT     7
 #define SECOND_WIDTH_FRACT   5
-
+#define SECOND_LINE_WIDTH    2
 #define SECOND_HAND_TIME     30         /*  Update limit for second hand*/
 
 static int     centerX = 0;             /*  Window coord origin of      */
@@ -190,7 +191,9 @@ static XtAppContext  appContext;
        int           screen;
 
        GC       gc;                     /*  For tick-marks, text, etc.  */
-static GC       handGC;                 /*  For drawing hands           */
+static GC	hourGC;			/*  For drawing the hour hand	*/
+static GC	minuteGC;		/*  For drawing the minute hand */
+static GC	secondGC;		/*  For drawing the second hand */
 static GC       eraseGC;                /*  For erasing hands           */
 static GC       highGC;                 /*  For hand borders            */
 
@@ -210,7 +213,9 @@ typedef struct {
     Pixel               background;             /*  Background          */
 
     Pixel               highlightColor;         /*  Hand outline/border */
-    Pixel               handColor;              /*  Hand interior       */
+    Pixel               hourColor;              /*  Hand interior       */
+    Pixel               minuteColor;            /*  Hand interior       */
+    Pixel               secondColor;            /*  Hand interior       */
     Pixel               catColor;               /*  Cat's body          */
     Pixel               detailColor;            /*  Cat's paws, belly,  */
                                                 /*  face, and eyes.     */
@@ -317,12 +322,20 @@ int main(int argc, char *argv[])
         { "highlight", "HighlightColor", XtRPixel, sizeof(Pixel),
           XtOffset(ApplicationDataPtr, highlightColor),
           XtRString, (XtPointer)"XtdefaultForeground" },
-    
-        { "hands", "Hands", XtRPixel, sizeof(Pixel),
-          XtOffset(ApplicationDataPtr, handColor),
+
+        { "hourColor", "HourColor", XtRPixel, sizeof(Pixel),
+          XtOffset(ApplicationDataPtr, hourColor),
           XtRString, (XtPointer)"XtdefaultForeground" },
-    
-        { "catColor", "CatColor", XtRPixel, sizeof(Pixel),
+
+        { "minuteColor", "HourColor", XtRPixel, sizeof(Pixel),
+          XtOffset(ApplicationDataPtr, minuteColor),
+          XtRString, (XtPointer)"XtdefaultForeground" },
+
+        { "secondColor", "SecondColor", XtRPixel, sizeof(Pixel),
+          XtOffset(ApplicationDataPtr, secondColor),
+          XtRString, (XtPointer)"XtdefaultForeground" },
+
+	{ "catColor", "CatColor", XtRPixel, sizeof(Pixel),
           XtOffset(ApplicationDataPtr, catColor),
           XtRString, (XtPointer)"XtdefaultForeground" },
     
@@ -392,8 +405,6 @@ int main(int argc, char *argv[])
         { "-hl",          "*highlight",    XrmoptionSepArg, (XtPointer)NULL },
         { "-highlight",   "*highlight",    XrmoptionSepArg, (XtPointer)NULL },
 
-        { "-hd",          "*hands",        XrmoptionSepArg, (XtPointer)NULL },
-        { "-hands",       "*hands",        XrmoptionSepArg, (XtPointer)NULL },
 
         { "-catcolor",    "*catColor",     XrmoptionSepArg, (XtPointer)NULL },
         { "-detailcolor", "*detailColor",  XrmoptionSepArg, (XtPointer)NULL },
@@ -748,17 +759,25 @@ int main(int argc, char *argv[])
     }
     
     gc = XCreateGC(dpy, clockWindow,  valueMask, &gcv);
-    
+     
     valueMask = GCForeground | GCLineWidth ;
     gcv.foreground = appData.background;
     eraseGC = XCreateGC(dpy, clockWindow,  valueMask, &gcv);
     
     gcv.foreground = appData.highlightColor;
     highGC = XCreateGC(dpy, clockWindow,  valueMask, &gcv);
-    
+
+    gcv.line_width = SECOND_LINE_WIDTH; 
+    gcv.foreground = appData.secondColor;
+    secondGC = XCreateGC(dpy, clockWindow,  valueMask, &gcv);
+   
     valueMask = GCForeground;
-    gcv.foreground = appData.handColor;
-    handGC = XCreateGC(dpy, clockWindow,  valueMask, &gcv);
+    gcv.foreground = appData.hourColor;
+    hourGC = XCreateGC(dpy, clockWindow,  valueMask, &gcv);
+
+    gcv.foreground = appData.minuteColor;
+    minuteGC = XCreateGC(dpy, clockWindow,  valueMask, &gcv);
+
 
     /*
      *  Make sure we have an alarm file.  If not
@@ -1400,21 +1419,21 @@ static void DrawSecond(int length, int width, int offset, double fractionOfACirc
     if(appData.drawSecondLine){
 	SetSeg(centerX,
 	       centerY,
-	       centerX + Round(length * sinAngle),
-	       centerY - Round(length * cosAngle));
+	       centerX + Round(offset * sinAngle),
+	       centerY - Round(offset * cosAngle));
     }
     /*1 ---- 2 */
-    SetSeg(x = centerX + Round(length * sinAngle),
-           y = centerY - Round(length * cosAngle),
+    SetSeg(x = centerX + Round(offset * sinAngle),
+           y = centerY - Round(offset * cosAngle),
            centerX + Round(ms - wc),
            centerY - Round(mc + ws) );
     SetSeg(centerX + Round(ms - wc), 
            centerY - Round(mc + ws),
-           centerX + Round(offset * sinAngle),
-           centerY - Round(offset * cosAngle)); /* 2-----3 */
+           centerX + Round(length * sinAngle),
+           centerY - Round(length * cosAngle)); /* 2-----3 */
 
-    SetSeg(centerX + Round(offset *sinAngle),
-           centerY - Round(offset * cosAngle), /* 3-----4 */
+    SetSeg(centerX + Round(length *sinAngle),
+           centerY - Round(length * cosAngle), /* 3-----4 */
            centerX + Round(ms + wc),
            centerY - Round(mc - ws));       
     
@@ -1452,15 +1471,16 @@ static void DrawClockFace(int secondHand, int radius)
             for (i = 0; i < 60; i++) {
                 DrawLine((i % 5) == 0 ? secondHand : (radius - delta),
                          radius, ((double) i) / 60.);
-            }
+		XDrawSegments(dpy, clockWindow,
+                          gc, (XSegment *) segBuf,
+                          numSegs / 2);
+
+
+	    }
         
             /*
              * Go ahead and draw it.
              */
-            XDrawSegments(dpy, clockWindow,
-                          gc, (XSegment *) segBuf,
-                          numSegs / 2);
-
             break;
         }
         case CAT_CLOCK : {
@@ -2137,9 +2157,9 @@ static void Tick(Widget w, int add)
                  */
                 DrawHand(minuteHandLength, handWidth,
                          ((double) tm.tm_min)/60.0);
-                if (appData.handColor != appData.background) {
+                if (clockMode == CAT_CLOCK || appData.minuteColor != appData.background) {
                     XFillPolygon(dpy,
-                                 clockWindow, handGC,
+                                 clockWindow, minuteGC,
                                  segBuf, VERTICES_IN_HANDS + 2,
                                  Convex, CoordModeOrigin);
                 }
@@ -2153,9 +2173,9 @@ static void Tick(Widget w, int add)
                          ((((double)tm.tm_hour) + 
                            (((double)tm.tm_min) / 60.0)) / 12.0));
         
-                if (appData.handColor != appData.background) {
+                if (clockMode == CAT_CLOCK || appData.hourColor != appData.background) {
                     XFillPolygon(dpy,
-                                 clockWindow, handGC,
+                                 clockWindow, hourGC,
                                  &(segBuf[VERTICES_IN_HANDS + 2]),
                                  VERTICES_IN_HANDS + 2,
                                  Convex, CoordModeOrigin);
@@ -2176,14 +2196,14 @@ static void Tick(Widget w, int add)
                            minuteHandLength + 2,
                            ((double)tm.tm_sec) / 60.0);
 
-                if (appData.handColor != appData.background) {
-                    XFillPolygon(dpy, clockWindow, handGC,
+                if ((clockMode == CAT_CLOCK) || (appData.secondColor != appData.background)) {
+                    XFillPolygon(dpy, clockWindow, secondGC,
                                  &(segBuf[(VERTICES_IN_HANDS + 2 + secondLineSeg) * 2]),
                                  VERTICES_IN_HANDS * 2 - 1,
                                  Convex, CoordModeOrigin);
                 }
             
-                XDrawLines(dpy, clockWindow, highGC,
+                XDrawLines(dpy, clockWindow, secondGC,
                                &(segBuf[(VERTICES_IN_HANDS + 2) * 2]),
                                (VERTICES_IN_HANDS + secondLineSeg) * 2 - 1,
                                CoordModeOrigin);
@@ -2490,19 +2510,28 @@ static void HandleResize(Widget w, XtPointer clientData, XtPointer callData)
 
 static void EraseHands(Widget w, struct tm *tm)
 {
+    XGCValues gcv, p_gcv;
+    u_long vmask;
+    gcv.foreground = appData.background;
+    gcv.line_width = SECOND_LINE_WIDTH;
+    vmask = GCLineWidth | GCForeground;
+    XGetGCValues(dpy, eraseGC, vmask, &p_gcv);
+
     if (numSegs > 0) {
         if (showSecondHand) {
+	    XChangeGC(dpy, eraseGC, vmask, &gcv);
             XDrawLines(dpy, clockWindow, eraseGC,
                        &(segBuf[2 * (VERTICES_IN_HANDS + 2)]),
                        (VERTICES_IN_HANDS + secondLineSeg) * 2 - 1,
                        CoordModeOrigin);
 
-            if (appData.handColor != appData.background) {
+            if (appData.secondColor != appData.background) {
                 XFillPolygon(dpy, clockWindow, eraseGC,
                              &(segBuf[2 * (VERTICES_IN_HANDS + 2 + secondLineSeg)]),
                              VERTICES_IN_HANDS * 2 - 1,
                              Convex, CoordModeOrigin);
             }
+	    XChangeGC(dpy, eraseGC, vmask, &p_gcv);
         }
     
         if (!tm || tm->tm_min != otm.tm_min || tm->tm_hour != otm.tm_hour) {
@@ -2514,12 +2543,14 @@ static void EraseHands(Widget w, struct tm *tm)
                        &(segBuf[VERTICES_IN_HANDS + 2]), VERTICES_IN_HANDS,
                        CoordModeOrigin);
 
-            if (appData.handColor != appData.background) {
+            if (appData.minuteColor != appData.background) {
                 XFillPolygon(dpy, clockWindow, eraseGC,
                              segBuf, VERTICES_IN_HANDS + 2,
                              Convex, CoordModeOrigin);
-
-                XFillPolygon(dpy, clockWindow, eraseGC,
+	    }
+            
+	    if (appData.hourColor != appData.background) {
+		    XFillPolygon(dpy, clockWindow, eraseGC,
                              &(segBuf[VERTICES_IN_HANDS + 2]),
                              VERTICES_IN_HANDS + 2,
                              Convex, CoordModeOrigin);
